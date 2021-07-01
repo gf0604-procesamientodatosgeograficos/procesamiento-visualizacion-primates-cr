@@ -127,6 +127,22 @@ leaflet() %>%
     ),
     group = "Provincias - registros"
   ) %>%
+  addCircleMarkers(
+    data = primates,
+    stroke = F,
+    radius = 2,
+    fillColor = 'black',
+    fillOpacity = 1,
+    popup = paste(
+      primates$species,
+      primates$provincia,
+      primates$canton,
+      primates$eventDate,
+      paste0("<a href='", primates$occurrenceID, "'>Más información</a>"),
+      sep = '<br/>'
+    ),
+    group = "Terciopelos (Bothrops asper)"
+  ) %>%  
   addLayersControl(baseGroups = c("OSM"),
                    overlayGroups = c("Provincias - registros")) %>%
   addLegend(
