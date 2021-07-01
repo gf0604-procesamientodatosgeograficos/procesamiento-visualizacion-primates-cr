@@ -141,10 +141,11 @@ leaflet() %>%
       paste0("<a href='", primates$occurrenceID, "'>Más información</a>"),
       sep = '<br/>'
     ),
-    group = "Terciopelos (Bothrops asper)"
+    clusterOptions = markerClusterOptions(),
+    group = "Registros de primates"
   ) %>%  
   addLayersControl(baseGroups = c("OSM"),
-                   overlayGroups = c("Provincias - registros")) %>%
+                   overlayGroups = c("Provincias - registros", "Registros de primates")) %>%
   addLegend(
     position = "bottomleft",
     pal = colores_registros,
