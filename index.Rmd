@@ -98,10 +98,44 @@ provincias_registros <-
   summarize(registros = n_distinct(gbifID, na.rm = TRUE))  
 ```
 
-```{r map-provincias-registrs}
+```{r map-provincias-registros}
+colores_registros <-
+  colorNumeric(palette = "YlGnBu",
+               domain = provincias_registros$registros,
+               na.color = "transparent")
+
 leaflet() %>%
-  addTiles() %>%
-  addPolygons(data = provincias_registros)
+  addTiles(group = "OSM") %>%
+  addPolygons(
+    data = provincias_registros,
+    fillColor = ~ colores_registros(provincias_registros$registros),
+    fillOpacity = 0.7,
+    stroke = TRUE,
+    color = "black",
+    weight = 1,
+    popup = paste(
+      paste(
+        "<strong>Provincia:</strong>",
+        provincias_registros$provincia.x
+      ),
+      paste(
+        "<strong>Cantidad de registros:</strong>",
+        provincias_registros$registros
+        
+      ),
+      sep = '<br/>'
+    ),
+    group = "Provincias - registros"
+  ) %>%
+  addLayersControl(baseGroups = c("OSM"),
+                   overlayGroups = c("Provincias - registros")) %>%
+  addLegend(
+    position = "bottomleft",
+    pal = colores_registros,
+    values = provincias_registros$registros,
+    group = "Provincias - registros",
+    title = "Cantidad de registros"
+  )
 ```
 
 
