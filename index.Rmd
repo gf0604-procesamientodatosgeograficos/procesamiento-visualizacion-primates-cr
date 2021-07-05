@@ -234,7 +234,143 @@ leaflet() %>%
   )
 ```
 
+## Mapa de cantidad de especies por cantón
 
-## Mapa agrupado (clustered)
+```{r calculo-cantones-especies, message=FALSE, warning=FALSE}
+# Creación de conjunto de datos con la cantidad de especies por cantón
+cantones_especies <-
+  cantones %>%
+  st_join(primates) %>%
+  group_by(canton.x) %>%
+  summarize(especies = n_distinct(species, na.rm = TRUE)) %>%
+  rename(canton = canton.x)
+```
 
-## Mapa de calor
+```{r map-cantones-especies}
+# Mapa
+
+# Paleta de colores
+colores_especies <-
+  colorNumeric(palette = "YlOrRd",
+               domain = cantones_especies$especies,
+               na.color = "transparent")
+
+# Mapa Leaflet
+leaflet() %>%
+  addTiles(group = "OSM") %>%
+  addPolygons(
+    data = cantones_especies,
+    fillColor = ~ colores_especies(cantones_especies$especies),
+    fillOpacity = 0.7,
+    stroke = TRUE,
+    color = "black",
+    weight = 1,
+    popup = paste(
+      paste(
+        "<strong>Cantón:</strong>",
+        cantones_especies$canton
+      ),
+      paste(
+        "<strong>Cantidad de especies:</strong>",
+        cantones_especies$especies
+        
+      ),
+      sep = '<br/>'
+    ),
+    group = "Cantones - especies"
+  ) %>%
+  addCircleMarkers(
+    data = primates,
+    stroke = F,
+    radius = 2,
+    fillColor = 'black',
+    fillOpacity = 1,
+    popup = paste(
+      primates$species,
+      primates$provincia,
+      primates$canton,
+      primates$eventDate,
+      paste0("<a href='", primates$occurrenceID, "'>Más información</a>"),
+      sep = '<br/>'
+    ),
+    clusterOptions = markerClusterOptions(),
+    group = "Registros de primates"
+  ) %>%  
+  addLayersControl(baseGroups = c("OSM"),
+                   overlayGroups = c("Cantones - especies", "Registros de primates")) %>%
+  addLegend(
+    position = "bottomleft",
+    pal = colores_especies,
+    values = cantones_especies$especies,
+    group = "Cantones - especies",
+    title = "Cantidad de especies"
+  )
+```
+
+## Mapa de calor de registros
+
+```{r mapa-calor}
+# Mapa Leaflet
+leaflet() %>%
+  addTiles(group = "OSM") %>%
+  addProviderTiles(providers$CartoDB.DarkMatter, group = "CartoDB.DarkMatter") %>%
+  addHeatmap(
+    data = primates,
+    lng = ~decimalLongitude,
+    lat = ~decimalLatitude,
+    radius = 10,
+    blur = 20,
+    group = "Mapa de calor"
+  ) %>%
+  addCircleMarkers(
+    data = primates,
+    stroke = F,
+    radius = 2,
+    fillColor = 'black',
+    fillOpacity = 1,
+    popup = paste(
+      primates$species,
+      primates$provincia,
+      primates$canton,
+      primates$eventDate,
+      paste0("<a href='", primates$occurrenceID, "'>Más información</a>"),
+      sep = '<br/>'
+    ),
+    clusterOptions = markerClusterOptions(),
+    group = "Registros de primates"
+  ) %>%  
+  addLayersControl(baseGroups = c("CartoDB.DarkMatter", "OSM"),
+                   overlayGroups = c("Mapa de calor", "Registros de primates"))
+```
+
+## Mapa con controles de búsqueda en OSM, botón de reinicio y coordenadas
+
+```{r mapa-controles}
+# Mapa Leaflet
+leaflet() %>%
+  addTiles(group = "OSM") %>%
+  addCircleMarkers(
+    data = primates,
+    stroke = F,
+    radius = 2,
+    fillColor = 'black',
+    fillOpacity = 1,
+    popup = paste(
+      primates$species,
+      primates$provincia,
+      primates$canton,
+      primates$eventDate,
+      paste0("<a href='", primates$occurrenceID, "'>Más información</a>"),
+      sep = '<br/>'
+    ),
+    clusterOptions = markerClusterOptions(),
+    group = "Registros de primates"
+  ) %>%
+  addLayersControl(baseGroups = c("OSM"),
+                   overlayGroups = c("Registros de primates")) %>%
+  addResetMapButton() %>%
+  addSearchOSM() %>%
+  addMouseCoordinates() %>%
+  addScaleBar(position = "bottomleft", options = scaleBarOptions(imperial = FALSE)) %>%
+  addMiniMap(position = "bottomleft")
+```
