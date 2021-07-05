@@ -13,9 +13,9 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r carga-paquetes, message=FALSE, warning=FALSE}
 library(sf)
-library(raster)
 library(leaflet)
 library(leaflet.extras)
+library(leafem)
 library(dplyr)
 ```
 
@@ -91,19 +91,25 @@ cat("Cantidad de registros después de descartar los que no tienen provincia: ",
 ## Mapa de cantidad de registros por provincia
 
 ```{r calculo-provincias-registros, message=FALSE, warning=FALSE}
+# Creación de conjunto de datos con la cantidad de registros por provincia
 provincias_registros <-
   provincias %>%
   st_join(primates) %>%
   group_by(provincia.x) %>%
-  summarize(registros = n_distinct(gbifID, na.rm = TRUE))  
+  summarize(registros = n_distinct(gbifID, na.rm = TRUE)) %>%
+  rename(provincia = provincia.x)
 ```
 
 ```{r map-provincias-registros}
+# Mapa
+
+# Paleta de colores
 colores_registros <-
   colorNumeric(palette = "YlGnBu",
                domain = provincias_registros$registros,
                na.color = "transparent")
 
+# Mapa Leaflet
 leaflet() %>%
   addTiles(group = "OSM") %>%
   addPolygons(
@@ -116,7 +122,7 @@ leaflet() %>%
     popup = paste(
       paste(
         "<strong>Provincia:</strong>",
-        provincias_registros$provincia.x
+        provincias_registros$provincia
       ),
       paste(
         "<strong>Cantidad de registros:</strong>",
@@ -155,8 +161,79 @@ leaflet() %>%
   )
 ```
 
-
 ## Mapa de cantidad de especies por provincia
+
+```{r calculo-provincias-especies, message=FALSE, warning=FALSE}
+# Creación de conjunto de datos con la cantidad de especies por provincia
+provincias_especies <-
+  provincias %>%
+  st_join(primates) %>%
+  group_by(provincia.x) %>%
+  summarize(especies = n_distinct(species, na.rm = TRUE)) %>%
+  rename(provincia = provincia.x)
+```
+
+```{r map-provincias-especies}
+# Mapa
+
+# Paleta de colores
+colores_especies <-
+  colorNumeric(palette = "YlOrRd",
+               domain = provincias_especies$especies,
+               na.color = "transparent")
+
+# Mapa Leaflet
+leaflet() %>%
+  addTiles(group = "OSM") %>%
+  addPolygons(
+    data = provincias_especies,
+    fillColor = ~ colores_especies(provincias_especies$especies),
+    fillOpacity = 0.7,
+    stroke = TRUE,
+    color = "black",
+    weight = 1,
+    popup = paste(
+      paste(
+        "<strong>Provincia:</strong>",
+        provincias_especies$provincia
+      ),
+      paste(
+        "<strong>Cantidad de especies:</strong>",
+        provincias_especies$especies
+        
+      ),
+      sep = '<br/>'
+    ),
+    group = "Provincias - especies"
+  ) %>%
+  addCircleMarkers(
+    data = primates,
+    stroke = F,
+    radius = 2,
+    fillColor = 'black',
+    fillOpacity = 1,
+    popup = paste(
+      primates$species,
+      primates$provincia,
+      primates$canton,
+      primates$eventDate,
+      paste0("<a href='", primates$occurrenceID, "'>Más información</a>"),
+      sep = '<br/>'
+    ),
+    clusterOptions = markerClusterOptions(),
+    group = "Registros de primates"
+  ) %>%  
+  addLayersControl(baseGroups = c("OSM"),
+                   overlayGroups = c("Provincias - especies", "Registros de primates")) %>%
+  addLegend(
+    position = "bottomleft",
+    pal = colores_especies,
+    values = provincias_especies$especies,
+    group = "Provincias - especies",
+    title = "Cantidad de especies"
+  )
+```
+
 
 ## Mapa agrupado (clustered)
 
